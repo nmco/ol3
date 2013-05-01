@@ -1,6 +1,7 @@
 goog.require('ol.Map');
 goog.require('ol.RendererHints');
 goog.require('ol.View2D');
+goog.require('ol.geom2.LineStringCollection');
 goog.require('ol.geom2.PointCollection');
 goog.require('ol.layer.TileLayer');
 goog.require('ol.layer.VectorLayer2');
@@ -9,6 +10,7 @@ goog.require('ol.source.VectorSource2');
 goog.require('ol.source.XYZ');
 
 
+/*
 var pointCollection = ol.geom2.PointCollection.createEmpty(101 * 101);
 var i, j, x, y;
 for (i = 0; i < 101; ++i) {
@@ -18,7 +20,13 @@ for (i = 0; i < 101; ++i) {
     pointCollection.add([x, y]);
   }
 }
+*/
 var pointCollection = ol.geom2.PointCollection.pack([[0, 0]]);
+
+var lineStringCollection = ol.geom2.LineStringCollection.pack([
+  [[-10000000, -10000000], [10000000, 10000000]],
+  [[-10000000, 10000000], [10000000, -10000000]]
+]);
 
 var source = false ?
     new ol.source.OSM() :
@@ -36,8 +44,9 @@ var map = new ol.Map({
     }),
     new ol.layer.VectorLayer2({
       source: new ol.source.VectorSource2({
+        lineStringCollections: [lineStringCollection],
         projection: 'EPSG:3857',
-        pointCollections: [pointCollection]
+        pointCollections: []//[pointCollection]
       })
     })
   ],

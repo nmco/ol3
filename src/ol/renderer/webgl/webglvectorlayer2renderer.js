@@ -6,6 +6,7 @@ goog.require('ol.Size');
 goog.require('ol.extent');
 goog.require('ol.math');
 goog.require('ol.renderer.webgl.Layer');
+goog.require('ol.renderer.webgl.vectorlayer2.shader.LineStringCollection');
 goog.require('ol.renderer.webgl.vectorlayer2.shader.PointCollection');
 
 
@@ -43,6 +44,13 @@ ol.renderer.webgl.VectorLayer2 = function(mapRenderer, vectorLayer2) {
    * @type {number}
    */
   this.renderedRotation_ = NaN;
+
+  /**
+   * @private
+   * @type
+   *     {ol.renderer.webgl.vectorlayer2.shader.LineStringCollection.Locations}
+   */
+  this.lineStringCollectionLocations_ = null;
 
   /**
    * @private
@@ -128,6 +136,10 @@ ol.renderer.webgl.VectorLayer2.prototype.renderFrame =
   if (pointCollections.length > 0) {
     this.renderPointCollections(pointCollections);
   }
+  var lineStringCollections = vectorSource.getLineStringCollections();
+  if (lineStringCollections.length > 0) {
+    this.renderLineStringCollections(lineStringCollections);
+  }
 
   // FIXME configure projection matrix
   var projectionMatrix = this.projectionMatrix;
@@ -151,6 +163,49 @@ ol.renderer.webgl.VectorLayer2.prototype.renderFrame =
       -0.5,
       -0.5,
       0);
+
+};
+
+
+/**
+ * @param {Array.<ol.geom2.LineStringCollection>} lineStringCollections Line
+ *     string collections.
+ */
+ol.renderer.webgl.VectorLayer2.prototype.renderLineStringCollections =
+    function(lineStringCollections) {
+
+  var mapRenderer = this.getWebGLMapRenderer();
+  var gl = mapRenderer.getGL();
+
+  var fragmentShader = ol.renderer.webgl.vectorlayer2.shader.
+      LineStringCollectionFragment.getInstance();
+  var vertexShader = ol.renderer.webgl.vectorlayer2.shader.
+      LineStringCollectionVertex.getInstance();
+  var program = mapRenderer.getProgram(fragmentShader, vertexShader);
+  gl.useProgram(program);
+  if (goog.isNull(this.lineStringCollectionLocations_)) {
+    this.lineStringCollectionLocations_ =
+        new ol.renderer.webgl.vectorlayer2.shader.LineStringCollection.
+            Locations(gl, program);
+  }
+
+  gl.uniformMatrix4fv(this.lineStringCollectionLocations_.u_projectionMatrix,
+      false, this.projectionMatrix_);
+
+  var buf, dim, i, lineStringCollection;
+  for (i = 0; i < lineStringCollections.length; ++i) {
+    lineStringCollection = lineStringCollections[i];
+    buf = lineStringCollection.buf;
+    dim = lineStringCollection.dim;
+    mapRenderer.bindBuffer(goog.webgl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(this.lineStringCollectionLocations_.a_position);
+    gl.vertexAttribPointer(this.lineStringCollectionLocations_.a_position, 2,
+        goog.webgl.FLOAT, false, 4 * dim, 0);
+    gl.uniform4fv(this.lineStringCollectionLocations_.u_color, [0, 1, 0, 0.5]);
+    buf.forEachRange(function(start, stop) {
+      gl.drawArrays(goog.webgl.LINES, start / dim, (stop - start) / dim);
+    });
+  }
 
 };
 
