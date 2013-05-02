@@ -1,0 +1,2 @@
+@exportSymbol ol.geom2.PointCollection
+@exportProperty ol.geom2.PointCollection.pack
