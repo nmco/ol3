@@ -1,0 +1,2 @@
+@exportSymbol ol.geom2.LineStringCollection
+@exportProperty ol.geom2.LineStringCollection.pack
