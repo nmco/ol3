@@ -15,7 +15,7 @@ goog.require('ol.Size');
 goog.require('ol.View');
 goog.require('ol.coordinate');
 goog.require('ol.extent');
-goog.require('ol.projection');
+goog.require('ol.proj');
 
 
 /**
@@ -47,7 +47,7 @@ ol.View2D = function(opt_options) {
   var values = {};
   values[ol.View2DProperty.CENTER] = goog.isDef(options.center) ?
       options.center : null;
-  values[ol.View2DProperty.PROJECTION] = ol.projection.createProjection(
+  values[ol.View2DProperty.PROJECTION] = ol.proj.createProjection(
       options.projection, 'EPSG:3857');
   if (goog.isDef(options.resolution)) {
     values[ol.View2DProperty.RESOLUTION] = options.resolution;
@@ -175,10 +175,10 @@ ol.View2D.prototype.calculateExtent = function(size) {
   goog.asserts.assert(this.isDef());
   var center = this.getCenter();
   var resolution = this.getResolution();
-  var minX = center[0] - resolution * size.width / 2;
-  var maxX = center[0] + resolution * size.width / 2;
-  var minY = center[1] - resolution * size.height / 2;
-  var maxY = center[1] + resolution * size.height / 2;
+  var minX = center[0] - resolution * size[0] / 2;
+  var maxX = center[0] + resolution * size[0] / 2;
+  var minY = center[1] - resolution * size[1] / 2;
+  var maxY = center[1] + resolution * size[1] / 2;
   return [minX, maxX, minY, maxY];
 };
 
@@ -215,8 +215,8 @@ goog.exportProperty(
  * @return {number} Resolution.
  */
 ol.View2D.prototype.getResolutionForExtent = function(extent, size) {
-  var xResolution = (extent[1] - extent[0]) / size.width;
-  var yResolution = (extent[3] - extent[2]) / size.height;
+  var xResolution = (extent[1] - extent[0]) / size[0];
+  var yResolution = (extent[3] - extent[2]) / size[1];
   return Math.max(xResolution, yResolution);
 };
 
@@ -405,7 +405,7 @@ ol.View2D.createResolutionConstraint_ = function(options) {
   } else {
     maxResolution = options.maxResolution;
     if (!goog.isDef(maxResolution)) {
-      var projectionExtent = ol.projection.createProjection(
+      var projectionExtent = ol.proj.createProjection(
           options.projection, 'EPSG:3857').getExtent();
       maxResolution = Math.max(
           projectionExtent[1] - projectionExtent[0],

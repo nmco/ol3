@@ -1,12 +1,13 @@
 goog.provide('ol.layer.Vector');
 
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.events.EventType');
 goog.require('goog.object');
 goog.require('ol.Feature');
 goog.require('ol.geom.SharedVertices');
 goog.require('ol.layer.Layer');
-goog.require('ol.projection');
+goog.require('ol.proj');
 goog.require('ol.source.Vector');
 goog.require('ol.structs.RTree');
 goog.require('ol.style.Style');
@@ -69,7 +70,7 @@ ol.layer.FeatureCache.prototype.add = function(feature) {
   if (!goog.isNull(geometry)) {
     var geometryType = geometry.getType();
     this.geometryTypeIndex_[geometryType][id] = feature;
-    this.rTree_.put(geometry.getBounds(),
+    this.rTree_.insert(geometry.getBounds(),
         feature, geometryType);
   }
 };
@@ -87,7 +88,7 @@ ol.layer.FeatureCache.prototype.getFeaturesObject = function(opt_filter) {
     if (opt_filter instanceof ol.filter.Geometry) {
       features = this.geometryTypeIndex_[opt_filter.getType()];
     } else if (opt_filter instanceof ol.filter.Extent) {
-      features = this.rTree_.find(opt_filter.getExtent());
+      features = this.rTree_.searchReturningObject(opt_filter.getExtent());
     } else if (opt_filter instanceof ol.filter.Logical &&
         opt_filter.operator === ol.filter.LogicalOperator.AND) {
       var filters = opt_filter.getFilters();
@@ -102,8 +103,9 @@ ol.layer.FeatureCache.prototype.getFeaturesObject = function(opt_filter) {
           }
         }
         if (extentFilter && geometryFilter) {
-          features = this.rTree_.find(
-              extentFilter.getExtent(), geometryFilter.getType());
+          var type = geometryFilter.getType();
+          features = goog.object.isEmpty(this.geometryTypeIndex_[type]) ? {} :
+              this.rTree_.searchReturningObject(extentFilter.getExtent(), type);
         }
       }
     }
@@ -176,6 +178,13 @@ ol.layer.Vector = function(options) {
    * @private
    */
   this.featureCache_ = new ol.layer.FeatureCache();
+
+  /**
+   * @type {function(Array.<ol.Feature>):string}
+   * @private
+   */
+  this.transformFeatureInfo_ = goog.isDef(options.transformFeatureInfo) ?
+      options.transformFeatureInfo : ol.layer.Vector.uidTransformFeatureInfo;
 
   /**
    * TODO: this means we need to know dimension at construction
@@ -329,7 +338,7 @@ ol.layer.Vector.prototype.parseFeatures = function(data, parser, projection) {
 
   var addFeatures = function(features) {
     var sourceProjection = this.getSource().getProjection();
-    var transform = ol.projection.getTransform(sourceProjection, projection);
+    var transform = ol.proj.getTransform(sourceProjection, projection);
 
     transform(
         this.pointVertices_.coordinates,
@@ -374,6 +383,25 @@ ol.layer.Vector.prototype.parseFeatures = function(data, parser, projection) {
     // TODO: parse more data types
     throw new Error('Data type not supported: ' + data);
   }
+};
+
+
+/**
+ * @return {function(Array.<ol.Feature>):string} Feature info function.
+ */
+ol.layer.Vector.prototype.getTransformFeatureInfo = function() {
+  return this.transformFeatureInfo_;
+};
+
+
+/**
+ * @param {Array.<ol.Feature>} features Features.
+ * @return {string} Feature info.
+ */
+ol.layer.Vector.uidTransformFeatureInfo = function(features) {
+  var featureIds = goog.array.map(features,
+      function(feature) { return goog.getUid(feature); });
+  return featureIds.join(', ');
 };
 
 

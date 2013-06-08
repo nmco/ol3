@@ -1,11 +1,10 @@
-goog.require('ol.Collection');
 goog.require('ol.Map');
 goog.require('ol.RendererHint');
 goog.require('ol.View2D');
 goog.require('ol.layer.TileLayer');
 goog.require('ol.layer.Vector');
 goog.require('ol.parser.ogc.GML_v3');
-goog.require('ol.projection');
+goog.require('ol.proj');
 goog.require('ol.source.MapQuestOpenAerial');
 goog.require('ol.source.Vector');
 goog.require('ol.style.Polygon');
@@ -18,7 +17,7 @@ var raster = new ol.layer.TileLayer({
 
 var vector = new ol.layer.Vector({
   source: new ol.source.Vector({
-    projection: ol.projection.get('EPSG:4326')
+    projection: ol.proj.get('EPSG:4326')
   }),
   style: new ol.style.Style({rules: [
     new ol.style.Rule({
@@ -32,7 +31,7 @@ var vector = new ol.layer.Vector({
 });
 
 var map = new ol.Map({
-  layers: new ol.Collection([raster, vector]),
+  layers: [raster, vector],
   renderer: ol.RendererHint.CANVAS,
   target: 'map',
   view: new ol.View2D({

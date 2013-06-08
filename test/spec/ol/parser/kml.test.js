@@ -5,7 +5,7 @@ describe('ol.parser.kml', function() {
   var parser = new ol.parser.KML();
 
   describe('Test KML parser', function() {
-    it('Polygon read correctly', function() {
+    it('Polygon read / written correctly', function() {
       var url = 'spec/ol/parser/kml/polygon.kml';
       afterLoadXml(url, function(xml) {
         var obj = parser.read(xml);
@@ -13,11 +13,12 @@ describe('ol.parser.kml', function() {
         expect(xml).to.xmleql(goog.dom.xml.loadXml(output));
         expect(obj.features.length).to.eql(1);
         var geom = obj.features[0].getGeometry();
+        expect(obj.features[0].getFeatureId()).to.eql('KML.Polygon');
         expect(geom instanceof ol.geom.Polygon).to.be.ok();
         expect(geom.dimension).to.eql(3);
       });
     });
-    it('Linestring read correctly', function() {
+    it('Linestring read / written correctly', function() {
       var url = 'spec/ol/parser/kml/linestring.kml';
       afterLoadXml(url, function(xml) {
         var obj = parser.read(xml);
@@ -31,7 +32,7 @@ describe('ol.parser.kml', function() {
         expect(geom instanceof ol.geom.LineString).to.be.ok();
       });
     });
-    it('Point read correctly', function() {
+    it('Point read / written correctly', function() {
       var url = 'spec/ol/parser/kml/point.kml';
       afterLoadXml(url, function(xml) {
         var obj = parser.read(xml);
@@ -48,7 +49,7 @@ describe('ol.parser.kml', function() {
       afterLoadXml(url, function(xml) {
         var p = new ol.parser.KML({maxDepth: 1});
         // we need to supply a callback to get visited NetworkLinks
-        var obj = p.read(xml, function(features) {
+        p.read(xml, function(features) {
           expect(features.length).to.eql(3);
           done();
         });
@@ -59,7 +60,7 @@ describe('ol.parser.kml', function() {
       afterLoadXml(url, function(xml) {
         var p = new ol.parser.KML({maxDepth: 2});
         // we need to supply a callback to get visited NetworkLinks
-        var obj = p.read(xml, function(features) {
+        p.read(xml, function(features) {
           expect(features.length).to.eql(2);
           done();
         });
@@ -70,7 +71,7 @@ describe('ol.parser.kml', function() {
       afterLoadXml(url, function(xml) {
         var p = new ol.parser.KML({maxDepth: 1});
         // we need to supply a callback to get visited NetworkLinks
-        var obj = p.read(xml, function(features) {
+        p.read(xml, function(features) {
           // since maxDepth is 1, we will not get to the second feature
           expect(features.length).to.eql(1);
           done();
@@ -86,6 +87,7 @@ describe('ol.parser.kml', function() {
             'itself \n       at the height of the underlying terrain.';
         expect(obj.features[0].get('description')).to.eql(description);
         expect(obj.features[0].get('foo')).to.eql('bar');
+        expect(obj.features[0].getFeatureId()).to.eql('foobarbaz');
       });
     });
     it('Extended data read correctly [2]', function() {
@@ -98,7 +100,7 @@ describe('ol.parser.kml', function() {
         expect(feature.get('ElevationGain')).to.eql('10');
       });
     });
-    it('Multi geometry read correctly', function() {
+    it('Multi geometry read / written correctly', function() {
       var url = 'spec/ol/parser/kml/multigeometry.kml';
       afterLoadXml(url, function(xml) {
         var obj = parser.read(xml);
@@ -155,8 +157,11 @@ describe('ol.parser.kml', function() {
       expect(obj.features[0].get('description')).to.eql('Full of text.');
       expect(obj.features[0].get('name')).to.eql('Pezinok');
     });
-    it('Test line style', function() {
-      var test_style = '<kml xmlns="http://www.opengis.net/kml/2.2"> ' +
+    it('Test line style (read / write)', function() {
+      var test_style = '<kml xmlns="http://www.opengis.net/kml/2.2" ' +
+          'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
+          'xsi:schemaLocation="http://www.opengis.net/kml/2.2 ' +
+          'http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd"> ' +
           '<Document><Placemark><Style><LineStyle> <color>870000ff</color> ' +
           '<width>10</width> </LineStyle> </Style>  <LineString> ' +
           '<coordinates> -112,36 -113,37 </coordinates> </LineString>' +
@@ -172,8 +177,8 @@ describe('ol.parser.kml', function() {
       expect(symbolizer.opacity).to.eql(0.5294117647058824);
       expect(symbolizer.strokeWidth).to.eql(10);
     });
-    it('Test style fill', function() {
-      var test_style_fill = '<kml xmlns="http://www.opengis.net/kml/2.2"> ' +
+    it('Test style fill (read / write)', function() {
+      var test_style_fill = '<kml xmlns="http://www.opengis.net/kml/2.2">' +
           '<Document><Placemark>    <Style> <PolyStyle> <fill>1</fill> ' +
           '<color>870000ff</color> <width>10</width> </PolyStyle> </Style>' +
           '<Polygon><outerBoundaryIs><LinearRing><coordinates>' +
@@ -188,7 +193,10 @@ describe('ol.parser.kml', function() {
           '49.630662409673505 8.397385910100951,48.45172350357396 ' +
           '5.001370157823406,49.26855713824488</coordinates></LinearRing>' +
           '</outerBoundaryIs></Polygon></Placemark></Document></kml>';
-      var style_fill_write = '<kml xmlns="http://www.opengis.net/kml/2.2"> ' +
+      var style_fill_write = '<kml xmlns="http://www.opengis.net/kml/2.2" ' +
+          'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
+          'xsi:schemaLocation="http://www.opengis.net/kml/2.2 ' +
+          'http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd"> ' +
           '<Document><Placemark>    <Style> <PolyStyle> <fill>1</fill> ' +
           '<color>870000ff</color> <width>10</width> </PolyStyle> </Style>' +
           '<Polygon><outerBoundaryIs><LinearRing><coordinates>' +
@@ -206,7 +214,7 @@ describe('ol.parser.kml', function() {
       expect(symbolizer1.fillColor).to.eql('#ff0000');
       expect(symbolizer2.opacity).to.eql(0);
     });
-    it('Test iconStyle', function() {
+    it('Test iconStyle (read / write)', function() {
       var url = 'spec/ol/parser/kml/iconstyle.kml';
       afterLoadXml(url, function(xml) {
         var p = new ol.parser.KML({extractStyles: true});
